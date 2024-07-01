@@ -1,0 +1,21 @@
+#test {
+    color: red;
+}
+#newstyle {
+    color: purple;
+    font-size: 30px;
+}
+#link {
+    cursor:pointer;
+    color:rgb(205, 45, 226);
+    text-decoration:underline;
+}
+#romanich {
+    color: cyan;
+}
+h1, h2, h3, div {
+    color: rgb(67, 226, 133);
+}
+body {
+    background-color: rgb(54, 54, 54);
+}

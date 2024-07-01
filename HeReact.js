@@ -1,0 +1,493 @@
+class HtmlParser {
+    static parser = new DOMParser();
+    static body = document.getElementsByTagName("body")[0];
+    static commonTags = ['a', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                        'p', 'span', 'img', 'input', 'textarea', 'select',
+                        'button', 'label', 'table', 'tr', 'td', 'th', 'ul',
+                        'ol', 'li', 'dl', 'dt', 'dd', 'form', 'fieldset',
+                        'legend', 'script', 'style', 'link', 'meta',
+                        'br', 'title', 'head', 'body', 'html'];
+  
+    static checkForCustomTag(tagName) {
+      return !HtmlParser.commonTags.includes(tagName);
+    }
+  
+    static parseElement(element) {
+      const obj = {
+        tagName: element.localName,
+        attributes: [],
+        childNodes: [],
+        isCustom: HtmlParser.checkForCustomTag(element.localName),
+        innerText: ""
+      };
+  
+      // Attributes
+      for (let i = 0; i < element.attributes.length; i++) {
+        const attr = element.attributes[i];
+        obj.attributes.push({ name: attr.nodeName, value: attr.nodeValue });
+      }
+  
+      // Child nodes
+      for (let i = 0; i < element.childNodes.length; i++) {
+        const child = element.childNodes[i];
+        if (child.nodeType === 1) { // Element node
+          obj.childNodes.push(HtmlParser.parseElement(child));
+        } else if (child.nodeType === 3) { // Text node
+          obj.innerText += child.nodeValue;
+        }
+      }
+      return obj;
+    }
+  
+    static createElementsInHtml(elements, parent) {
+    const outHtmlelements = [];
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+      if (element.isCustom) {
+        try {
+          let custom_obj = undefined;
+          let custom_prop = undefined;
+          eval(`custom_obj = new ${element.tagName}();`);
+          const prop_str = element.innerText;
+          if (prop_str.length > 0 && prop_str[0] === "{" && prop_str[prop_str.length - 1] === "}") {
+            eval(`custom_prop = ${prop_str}`);
+          };
+          const cutomObjAttribs = element.attributes;
+          const customObjElementsArr = HtmlParser.parseHtml(custom_obj.render(custom_prop));
+          customObjElementsArr.forEach(e => {
+              cutomObjAttribs.forEach(atr => e.setAttribute(atr.name, atr.value))
+              outHtmlelements.push(e);
+          });
+          continue;
+          // Add the custom element itself to the outHtmlelements array
+        } catch (error) {
+          console.error("Failed to create custom object:", error);
+        }
+      } else {
+        const newElement = document.createElement(element.tagName);
+        for (let j = 0; j < element.attributes.length; j++) {
+          const attr = element.attributes[j];
+          newElement.setAttribute(attr.name, attr.value);
+        }
+        newElement.innerText = element.innerText;
+        for (let j = 0; j < element.childNodes.length; j++) {
+          const child = element.childNodes[j];
+          const childArr = HtmlParser.createElementsInHtml([child], newElement);
+          childArr.forEach(e => outHtmlelements.push(e));
+        }
+        if (parent !== undefined) {
+          parent.appendChild(newElement);
+        }
+        outHtmlelements.push(newElement);
+      }
+    };
+    return outHtmlelements;
+  }
+  
+    static parseHtml(html) {
+      const htmlText = html.replaceAll("\t", "").replaceAll("\n", "").replace(/\s+/g, ' ');
+      const doc = HtmlParser.parser.parseFromString(htmlText, "text/html");
+      const elements = doc.body.childNodes;
+      const resultObjs = [];
+  
+      for (let i = 0; i < elements.length; i++) {
+        if (elements[i].nodeName === '#text') {
+            continue;
+        };
+        resultObjs.push(HtmlParser.parseElement(elements[i]));
+      }
+      return HtmlParser.createElementsInHtml(resultObjs);
+    }
+    static showElements(arr, root) {
+      for (let i = 0; i < arr.length; ++i) {
+          if (arr[i].childNodes > 1) {
+              continue
+          };
+          root.appendChild(arr[i]);
+      }
+    }
+  }
+class Component {
+    componentsArr = [];
+    constructor(elem) {
+        if (isArray(elem)) {
+            this.componentsArr = elem;
+        } else if (typeof elem === "object") {
+            try {
+                this.componentsArr.push(HeReact.createElement(elem.render()));
+            } catch (e) {
+                throw new Error(
+                    "Custom component needs to have render function"
+                );
+            }
+        } else if (typeof elem === "string") {
+            this.componentsArr.push(HeReact.createElement(elem));
+        } else {
+            throw new Error("Unknown component type");
+        }
+    }
+    getElementById(idStr) {
+        let index = -1;
+        this.componentsArr.forEach((e, idx) => {
+            if (e.id == idStr) {
+                index = idx;
+            }
+        });
+        if (index === -1) return null;
+        else return this.componentsArr[index];
+    }
+    getElementByClass(classStr) {
+        let index = -1;
+        this.componentsArr.forEach((e, idx) => {
+            if (e.class == classStr) {
+                index = idx;
+            }
+        });
+        if (index === -1) return null;
+        else return this.componentsArr[index];
+    }
+}
+class Route {
+    pathName = "";
+    elems;
+    onMountFunc;
+    beforeRenderFunc;
+    afterRenderFunc;
+    constructor(
+        pathName,
+        elems,
+        onMountFunc,
+        beforeRenderFunc,
+        afterRenderFunc
+    ) {
+        this.pathName = pathName;
+        this.elems = new Component(elems);
+        this.onMountFunc = onMountFunc;
+        this.beforeRenderFunc = beforeRenderFunc;
+        this.afterRenderFunc = afterRenderFunc;
+        if (!isFunction(this.onMountFunc)) this.onMountFunc = () => {};
+        if (!isFunction(this.beforeRenderFunc))
+            this.beforeRenderFunc = () => {};
+        if (!isFunction(this.afterRenderFunc)) this.afterRenderFunc = () => {};
+        this.callOnMountFunc();
+    }
+    callOnMountFunc() {
+        try {
+            this.onMountFunc(this);
+        } catch (e) {
+            console.error("Error in onMountFunction: ", e);
+        }
+    }
+    callBeforeRenderFunc() {
+        try {
+            this.beforeRenderFunc(this);
+        } catch (e) {
+            console.error("Error in beforeRenderFunction: ", e);
+        }
+    }
+    callAfterRenderFunc() {
+        try {
+            this.afterRenderFunc(this);
+        } catch (e) {
+            console.error("Error in afterRenderFunction: ", e);
+        }
+    }
+    getElementById(idStr) {
+        return this.elems.getElementById(idStr);
+    }
+    getElementByClass(classStr) {
+        return this.elems.getElementByClass(classStr);
+    }
+    addElementsText(innerHTML) {
+        let tempArr = HeReact.createElements(innerHTML);
+        tempArr.forEach((e) => {
+            this.elems.componentsArr.push(e);
+        });
+    }
+    addElementsArr(arr) {
+        arr.forEach((e) => {
+            this.elems.componentsArr.push(e);
+        });
+    }
+}
+class State {
+    target = null;
+    property = "";
+    lineStart = 0;
+    lineEnd = 0;
+    constructor(target, property, start, end) {
+        this.target = target;
+        this.property = property;
+        this.lineStart = start;
+        this.lineEnd = end;
+    }
+}
+class HeReact {
+    routes = [];
+    root;
+    hash;
+    static currentContext;
+    constructor() {
+        let rootElem = document.getElementById("root");
+        if (rootElem == null) {
+            rootElem = document.createElement("div");
+            rootElem.setAttribute("class", "root");
+            rootElem.setAttribute("id", "root");
+            document.body.append(rootElem);
+        }
+        this.root = rootElem;
+        this.hash = window.location.hash;
+        window.addEventListener("hashchange", () => {
+            this.hash = window.location.hash;
+            this.hash.replace("/", "#");
+            this.render();
+        });
+    }
+    addRoutes(routesArr) {
+        routesArr.forEach((e) => {
+            this.addRoute(e);
+        });
+    }
+    addRoute(route) {
+        this.routes.push(route);
+    }
+    clear() {
+        this.root.innerHTML = "";
+    }
+    render(routeStr) {
+        if (this !== undefined) {
+            HeReact.currentContext = this;
+        }
+        if (routeStr === undefined)
+            routeStr = HeReact.currentContext.getCurrentRouteStr();
+        this.clear();
+        let index = -1;
+        for (let i = 0; i < this.routes.length; ++i) {
+            if (this.routes[i].pathName === routeStr) {
+                index = i;
+                break;
+            }
+        }
+        if (index == -1) {
+            return;
+        } else {
+            const elem = HeReact.currentContext.routes[index];
+
+            try {
+                elem.callBeforeRenderFunc(this.routes[index]);
+            } catch (e) {
+                console.error("Error in beforeRenderFunction: ", e);
+            }
+            HtmlParser.showElements(elem.elems.componentsArr, this.root);
+            try {
+                elem.callAfterRenderFunc(this.routes[index]);
+            } catch (e) {
+                console.error("Error in afterRenderFunction: ", e);
+            }
+        }
+    }
+    changeRoute(routeStr) {
+        window.location.hash = routeStr;
+        this.render(routeStr);
+    }
+    getCurrentRouteStr() {
+        let routeStr = this.hash;
+        if (routeStr.length === 0) routeStr = "#";
+        const route = routeStr.split("?");
+        routeStr = route[0];
+        return routeStr;
+    }
+    getCurrentActionsStr() {
+        let routeStr = this.hash;
+        if (routeStr.length === 0) routeStr = "#";
+        const route = routeStr.split("?");
+        if (route.length > 1) {
+            return route[1];
+        }
+        return [];
+    }
+    static createElement(innerHTML) {
+        const arr = HeReact.createElements(innerHTML);
+        if (arr.length > 0) return arr[0];
+        return [];
+    }
+    static parseStateOfElements(elementsArr) {
+        for (let j = 0; j < elementsArr.length; ++j) {
+            let text = elementsArr[j].innerText;
+            const ress = elementsArr[j];
+            let regexp = /[$][#]{.*?}/g;
+            const abc = Array.from(text.matchAll(regexp));
+            let accumLength = 0;
+            for (let testt of abc) {
+                testt.forEach((e, idx) => {
+                    const start = testt.index + 3;
+                    const end = testt.index + testt[idx].length - 1;
+                    let command = testt.input.slice(start, end);
+                    const state = new State(
+                        ress,
+                        "innerText",
+                        start - 3 + accumLength
+                    );
+                    const constructorStr =
+                        state.constructor.name.toLocaleLowerCase();
+                    command = command.replace("this", `${constructorStr}`);
+                    const commandAddition = command.indexOf(constructorStr);
+                    let commandStr = "";
+                    if (
+                        commandAddition !== -1 &&
+                        commandAddition + constructorStr.length + 1 <
+                            command.length
+                    ) {
+                        commandStr = command.slice(
+                            commandAddition + constructorStr.length + 1,
+                            command.length
+                        );
+                        command = command.replace(
+                            `${constructorStr}`,
+                            `${constructorStr}, "` + commandStr + '"'
+                        );
+                    }
+                    let result;
+                    eval(`result = ${command};`);
+                    text =
+                        text.slice(0, start - 3 + accumLength) +
+                        "" +
+                        result +
+                        "" +
+                        text.slice(
+                            testt.index + accumLength + ("" + e).length,
+                            text.length
+                        );
+                    accumLength += ("" + result).length - e.length;
+                });
+            }
+            elementsArr[j].innerText = text;
+        }
+    }
+    static createElements(innerHTML) {
+        const resArr = HtmlParser.parseHtml(innerHTML);
+        //console.log(resArr);
+        for (let j = 0; j < resArr.length; ++j) {
+            const ress = resArr[j];
+            if (ress.outerHTML === "<br>") continue;
+            let text = ress.childNodes[0].nodeValue;
+            let regexp = /[$][#]{.*?}/g;
+            const abc = Array.from(text.matchAll(regexp));
+            let accumLength = 0;
+            for (let testt of abc) {
+                testt.forEach((e, idx) => {
+                    const start = testt.index + 3;
+                    const end = testt.index + testt[idx].length - 1;
+                    let command = testt.input.slice(start, end);
+                    const state = new State(
+                        ress,
+                        "innerText",
+                        start - 3 + accumLength
+                    );
+                    const constructorStr =
+                        state.constructor.name.toLocaleLowerCase();
+                    command = command.replace("this", `${constructorStr}`);
+                    const commandAddition = command.indexOf(constructorStr);
+                    let commandStr = "";
+                    if (
+                        commandAddition !== -1 &&
+                        commandAddition + constructorStr.length + 1 <
+                            command.length
+                    ) {
+                        commandStr = command.slice(
+                            commandAddition + constructorStr.length + 1,
+                            command.length
+                        );
+                        command = command.replace(
+                            `${constructorStr}`,
+                            `${constructorStr}, "` + commandStr + '"'
+                        );
+                    }
+                    let result;
+                    eval(`result = ${command};`);
+                    text =
+                        text.slice(0, start - 3 + accumLength) +
+                        "" +
+                        result +
+                        "" +
+                        text.slice(
+                            testt.index + accumLength + ("" + e).length,
+                            text.length
+                        );
+                    accumLength += ("" + result).length - e.length;
+                });
+            }
+            ress.childNodes[0].nodeValue = text;
+        }
+        return resArr;
+    }
+}
+function useState(val) {
+    let newVal = val;
+    let command = "";
+    const stateArr = [];
+    function state(element, cmnd) {
+        if (element !== undefined) {
+            element.lineEnd = element.lineStart + ("" + newVal).length;
+            stateArr.push(element);
+        }
+        if (cmnd !== undefined && cmnd.length > 0) {
+            command = cmnd;
+        }
+        return newVal;
+    }
+    function setVal(newValue, cmnd) {
+        if (cmnd !== undefined && cmnd !== null && cmnd.length > 0) {
+            command = cmnd;
+        }
+        if (command.length > 0) {
+            eval(`newVal = newValue${command}`);
+        } else {
+            newVal = newValue;
+        }
+        stateArr.forEach((e, idx) => {
+            if (e === null || e.target === null) {
+                throw new Error(
+                    "useState setter called with a state element that is null"
+                );
+            }
+            const start = e.target.innerText.slice(0, e.lineStart);
+            const end = e.target.innerText.slice(
+                e.lineEnd,
+                e.target.innerText.length
+            );
+
+            e.target.innerText = start + "" + newVal + "" + end;
+            let before = e.lineEnd;
+            e.lineEnd = e.lineStart + ("" + newVal).length;
+            let beforee = before - e.lineEnd;
+
+            if (before !== 0) {
+                const sameElement = stateArr.filter(
+                    (el, index) =>
+                        el.target === e.target &&
+                        index !== idx &&
+                        el.lineStart >= e.lineEnd
+                );
+                sameElement.forEach((f) => {
+                    if (f === null || f.target === null) {
+                        throw new Error(
+                            "useState setter called with a state element that is null"
+                        );
+                    }
+
+                    //fix
+                    f.lineStart -= beforee;
+                    f.lineEnd -= beforee;
+                });
+            }
+        });
+    }
+    return [state, setVal];
+}
+function isArray(arr) {
+    return toString.call(arr) === "[object Array]";
+}
+function isFunction(func) {
+    return typeof func === "function";
+}
