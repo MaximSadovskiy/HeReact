@@ -321,6 +321,7 @@ class HeReact {
     }
     static prop(str)
     {
+        console.log(str);
         if (typeof str === 'string') return str;
         else return JSON.stringify(str);
     }

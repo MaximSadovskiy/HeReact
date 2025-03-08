@@ -1,21 +1,79 @@
-#test {
-    color: red;
-}
-#newstyle {
-    color: purple;
-    font-size: 30px;
-}
-#link {
-    cursor:pointer;
-    color:rgb(205, 45, 226);
-    text-decoration:underline;
-}
-#romanich {
-    color: cyan;
-}
-h1, h2, h3, div {
-    color: rgb(67, 226, 133);
+* {
+  box-sizing: border-box;
 }
 body {
-    background-color: rgb(54, 54, 54);
+  min-height: 97vh;
+  background-color: #222222;
+}
+button {
+  border-radius: 10px;
+  border: 3px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 2.2em;
+  font-family: "Times New Roman", Times, serif;
+  background-color: #1a1a1a;
+  border-color: #00D8FF;
+  color: #fd4e4e;
+  cursor: pointer;
+  transition: border-color 0.35s;
+  margin: 0.5em;
+}
+button:active {
+  translate: 0px 0.2em;
+}
+button:hover {
+  border-color: #646cff;
+}
+h1, h2, h3 {
+  line-height: 1.5;
+  font-weight: 400;
+  margin: 0.5vh;
+  color: #fd4e4e;
+  text-align: center;
+}
+h1 {
+  font-size: 3.2em;
+}
+h2 {
+  color: #00D8FF;
+  font-size: 2.5em;
+}
+h3 {
+  color: #068095;
+  font-size: 2.0em;
+}
+#root {
+  min-height: 95vh;
+  margin: 0 auto;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+#back
+{
+  margin-top: auto;
+  bottom: 0;
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+    }
+}
+.logo {
+  height: 20em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+  animation: logo-spin infinite 3s;
+  margin-bottom: 5em;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #fb618faa);
+}
+.card {
+  padding: 2em;
 }
