@@ -9,14 +9,9 @@ Check out `Example.js`, if that is too boring, then here's summary:
 
 ```js
 
-const app = new HeReact(); // One app for whole site
-
 const mainPage = new Route('#', HeReact.createElements('<h1>Hello from HeReact</h1>')); // Register route
 
-app.addRoutes([mainPage]);
-
-app.render(); // First render (It will be automatic after that)
-
+HeReact.addRoute(mainPage);
 ```
 
 ## Installation
