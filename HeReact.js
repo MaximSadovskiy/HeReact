@@ -390,7 +390,7 @@ class HeReact {
         const resArr = HtmlParser.parseHtml(innerHTML);
         for (let j = 0; j < resArr.length; ++j) {
             const ress = resArr[j];
-            if (ress.localName === "br" || ress.localName === "img") continue;
+            if (ress.localName === "br" || ress.localName === "img" || ress.localName === "input" || !ress.childNodes[0]) continue;
             let text = ress.childNodes[0].nodeValue;
             let regexp = /[$][#]{.*?}/g;
             const abc = Array.from(text.matchAll(regexp));

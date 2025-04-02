@@ -8,7 +8,7 @@ body {
 button {
   border-radius: 10px;
   border: 3px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.1em 0.5em;
   font-size: 2.2em;
   font-family: "Times New Roman", Times, serif;
   background-color: #1a1a1a;
@@ -24,7 +24,7 @@ button:active {
 button:hover {
   border-color: #646cff;
 }
-h1, h2, h3 {
+h1, h2, h3, h4 {
   line-height: 1.5;
   font-weight: 400;
   margin: 0.5vh;
@@ -42,6 +42,21 @@ h3 {
   color: #068095;
   font-size: 2.0em;
 }
+h4 {
+  color: #00C9FF;
+  overflow: hidden;
+  white-space: wrap;
+  font-size: 1.5em;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+#todos
+{
+  grid-auto-rows: 5.3em;
+  display: grid;
+  grid-template-columns: 15em minmax(0.9em, 7em);
+}
+
 #root {
   min-height: 95vh;
   margin: 0 auto;
