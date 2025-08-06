@@ -85,6 +85,8 @@ h4 {
   transition: filter 300ms;
   animation: logo-spin infinite 3s;
   margin-bottom: 5em;
+  user-select: none;
+  user-drag: none;
 }
 .logo:hover {
   filter: drop-shadow(0 0 2em #fb618faa);

@@ -4,10 +4,10 @@ function showElement(self) {
     if (!elem) return;
 
     if (!show) {
-        self.innerText = "Hide text";
+        self.innerText = "Hide title";
         elem.style.visibility = "visible";
     } else {
-        self.innerText = "Show text";
+        self.innerText = "Show title";
         elem.style.visibility = "hidden";
     }
     show = !show;

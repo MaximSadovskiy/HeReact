@@ -73,7 +73,7 @@ class HtmlParser {
                 for (let j = 0; j < element.childNodes.length; j++) {
                     const child = element.childNodes[j];
                     const childArr = HtmlParser.createElementsInHtml([child], newElement);
-                    childArr.forEach(e => outHtmlelements.push(e));
+                    childArr.forEach(e => newElement.appendChild(e));
                 }
                 if (parent !== undefined) {
                     parent.appendChild(newElement);
@@ -333,63 +333,12 @@ class HeReact {
         if (arr.length > 0) return arr[0];
         return [];
     }
-    static parseStateOfElements(elementsArr) {
-        for (let j = 0; j < elementsArr.length; ++j) {
-            let text = elementsArr[j].innerText;
-            const ress = elementsArr[j];
-            let regexp = /[$][#]{.*?}/g;
-            const abc = Array.from(text.matchAll(regexp));
-            let accumLength = 0;
-            for (let testt of abc) {
-                testt.forEach((e, idx) => {
-                    const start = testt.index + 3;
-                    const end = testt.index + testt[idx].length - 1;
-                    let command = testt.input.slice(start, end);
-                    const state = new State(
-                        ress,
-                        "innerText",
-                        start - 3 + accumLength
-                    );
-                    const constructorStr =
-                        state.constructor.name.toLocaleLowerCase();
-                    command = command.replace("this", `${constructorStr}`);
-                    const commandAddition = command.indexOf(constructorStr);
-                    let commandStr = "";
-                    if (
-                        commandAddition !== -1 &&
-                        commandAddition + constructorStr.length + 1 <
-                            command.length
-                    ) {
-                        commandStr = command.slice(
-                            commandAddition + constructorStr.length + 1,
-                            command.length
-                        );
-                        command = command.replace(
-                            `${constructorStr}`,
-                            `${constructorStr}, "` + commandStr + '"'
-                        );
-                    }
-                    let result;
-                    eval(`result = ${command};`);
-                    text =
-                        text.slice(0, start - 3 + accumLength) +
-                        "" +
-                        result +
-                        "" +
-                        text.slice(
-                            testt.index + accumLength + ("" + e).length,
-                            text.length
-                        );
-                    accumLength += ("" + result).length - e.length;
-                });
-            }
-            elementsArr[j].innerText = text;
-        }
-    }
-    static createElements(innerHTML) {
-        const resArr = HtmlParser.parseHtml(innerHTML);
+    static parseStateOfElements(resArr) {
         for (let j = 0; j < resArr.length; ++j) {
             const ress = resArr[j];
+            let childList = ress.children;
+            if (childList.length > 0)
+                this.parseStateOfElements(childList)
             if (ress.localName === "br" || ress.localName === "img" || ress.localName === "input" || !ress.childNodes[0]) continue;
             let text = ress.childNodes[0].nodeValue;
             let regexp = /[$][#]{.*?}/g;
@@ -441,6 +390,10 @@ class HeReact {
             ress.childNodes[0].nodeValue = text;
         }
         return resArr;
+    }
+    static createElements(innerHTML) {
+        const resArr = HtmlParser.parseHtml(innerHTML);
+        return HeReact.parseStateOfElements(resArr);
     }
 }
 function useState(val, eventName) {

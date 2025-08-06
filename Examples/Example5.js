@@ -24,9 +24,9 @@ function addTODO(self)
     const inputText = document.getElementById("inputText");
     if (!parent || !inputText || !self)
         return;
-    const str = inputText.value;
+    let str = inputText.value;
     if (str.length == 0)
-        return;
+        str = "empty :("
 
     const newIndex = todos.length;
     const newTodo = HeReact.createElement(`<h4 index=${newIndex}>${str}</h4>`);
