@@ -63,7 +63,7 @@ class TestLib
         const body = document.querySelector("body");
         assert(this.validateValue(body), "Cannot found body, WTF");
         const hook = document.createElement("div");
-        assert(this.validateValue(body), "Cannot create hook, WTF");
+        assert(this.validateValue(hook), "Cannot create hook, WTF");
         body.style.backgroundColor = "black";
         hook.className = `test-hook`;
         body.appendChild(hook);

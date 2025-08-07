@@ -234,6 +234,7 @@ class State {
 }
 class HeReact {
     routes = [];
+    registeredEvents = [];
     root;
     hash;
     constructor() {
@@ -395,6 +396,28 @@ class HeReact {
         const resArr = HtmlParser.parseHtml(innerHTML);
         return HeReact.parseStateOfElements(resArr);
     }
+    static registerEvent(eventName) {
+        let alreadyExist = false;
+        let index = -1;
+        for (let i = 0; i < _app.registeredEvents.length; ++i)
+        {
+            if (_app.registeredEvents[i].type === eventName)
+            {
+                alreadyExist = true;
+                index = i;
+                break;
+            }
+        }
+        if (!alreadyExist)
+        {
+            const customEv = new CustomEvent(eventName);
+            _app.registeredEvents.push(customEv);
+            let fn = () => {eval(`if (eventName !== undefined) ${eventName}()`);};
+            document.addEventListener(eventName, fn);
+            return customEv;
+        }
+        return _app.registeredEvents[index];
+    }
 }
 function useState(val, eventName) {
     let newVal = val;
@@ -403,11 +426,14 @@ function useState(val, eventName) {
     if (eventName !== undefined && eventName !== null)
     {
         if (typeof eventName === 'function')
+        {
             eventName = eventName.name;
-
-        customEv = new CustomEvent(eventName);
-        let fn = () => {eval(`if (eventName !== undefined) ${eventName}()`);};
-        document.addEventListener(eventName, fn); 
+            if (eventName.length < 1)
+                throw new Error(
+                  "You cannot use lamda functions in useEvent"
+                )
+        }
+        customEv = HeReact.registerEvent(eventName);
     }
     const stateArr = [];
     function state(element, cmnd) {

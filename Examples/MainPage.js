@@ -1,13 +1,19 @@
-let count = 1;
+const countOfExamples = 7;
 
-const mainPageElems
-    = HeReact.createElements(`<h1>Welcome to HeReact!</h1>
-                              <button onClick='{HeReact.changeRoute("example${count}")}'>Example ${count++}</button>
-                              <button onClick='{HeReact.changeRoute("example${count}")}'>Example ${count++}</button>
-                              <button onClick='{HeReact.changeRoute("example${count}?Change=me&React=...&int=123;")}'>Example ${count++}</button>
-                              <button onClick='{HeReact.changeRoute("example${count}")}'>Example ${count++}</button>
-                              <button onClick='{HeReact.changeRoute("example${count}")}'>Example ${count++}</button>
-                            `);
+function renderPage() {
+  let page = `<h1>Welcome to HeReact!</h1>`
+  const specialPage = 3;
+  for (let i = 1; i <= countOfExamples; ++i)
+  {
+    if (i === specialPage)
+      page += `<button onClick='{HeReact.changeRoute("example${specialPage}?Change=me&React=...&int=123;")}'>Example ${specialPage}</button>`;
+    else  
+      page += `<button onClick='{HeReact.changeRoute("example${i}")}'>Example ${i}</button>`;
+  }
+  return page;
+}
+
+const mainPageElems = HeReact.createElements(renderPage());
 
 const mainPage = new Route('#', mainPageElems)
-HeReact.addRoutes([mainPage]);
+HeReact.addRoute(mainPage);
