@@ -10,6 +10,7 @@ function updateButtonCounter(button)
         setButtonCount2(buttonCount2() + 1)
 }
 
+// Second argument equals to useEvent
 const [buttonCount1, setButtonCount1] = useState(0, updateTotalCount);
 const [buttonCount2, setButtonCount2] = useState(0, updateTotalCount);
 const [totalCount, setTotalCount] = useState(0);

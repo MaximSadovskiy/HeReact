@@ -4,8 +4,8 @@ const Tests =
     {fn: test2, expected: `{"secretAtrib":123}` },
 ];
 
-function test1() { return HeReact.prop({secretAtrib: 123}); }
-function test2() { const obj = {secretAtrib: 123}; return HeReact.prop(obj); }
+function test1() { return prop({secretAtrib: 123}); }
+function test2() { const obj = {secretAtrib: 123}; return prop(obj); }
 function hereactFunction() {}
 
 //execute when page is loaded

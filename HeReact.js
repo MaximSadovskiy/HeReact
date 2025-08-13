@@ -73,7 +73,19 @@ class HtmlParser {
                 for (let j = 0; j < element.childNodes.length; j++) {
                     const child = element.childNodes[j];
                     const childArr = HtmlParser.createElementsInHtml([child], newElement);
-                    childArr.forEach(e => newElement.appendChild(e));
+                    childArr.forEach(e => {
+                        if (e instanceof PromiseComponent) {
+                            if (e.isInner === false) {
+                                e.isInner = true;
+                                e.parent = newElement;
+                                const stub = HeReact.createElement(`<div id='__PRIVATE_PROMISE_ELEMENT${e.registeredIndex}__'></div>`, true);
+                                newElement.appendChild(stub);
+                                outHtmlelements.push(e)
+                            }
+                        }
+                        else
+                            newElement.appendChild(e);
+                        });
                 }
                 if (parent !== undefined) {
                     parent.appendChild(newElement);
@@ -85,6 +97,14 @@ class HtmlParser {
     }
   
     static parseHtml(html) {
+      if (html instanceof Promise)
+      {
+        const index = _app.registeredPromises.length;
+        const promise = new PromiseComponent(html, index);
+        _app.registeredPromises.push(promise);
+        html.then((val) => {HeReact.promiseDone(index, val)});
+        return [promise];
+      }
       const htmlText = html.replaceAll("\t", "").replaceAll("\n", "").replace(/\s+/g, ' ');
       const doc = HtmlParser.parser.parseFromString(htmlText, "text/html");
       const elements = doc.body.childNodes;
@@ -103,10 +123,27 @@ class HtmlParser {
           if (arr[i].childNodes > 1) {
               continue
           };
+          if (arr[i] instanceof PromiseComponent)
+          {
+              continue;
+          }
           root.appendChild(arr[i]);
       }
     }
   }
+class PromiseComponent {
+    promise = null;
+    route = null;
+    parent = null;
+    registeredIndex = -1;
+    elementIndex = -1;
+    isInner = false;
+
+    constructor(promise, registeredIndex) {
+        this.promise = promise;
+        this.registeredIndex = registeredIndex;
+    }
+}
 class Component {
     componentsArr = [];
     constructor(elem) {
@@ -171,7 +208,18 @@ class Route {
             pathName = "#";
 
         this.pathName = pathName;
-        this.elems = new Component(elems);
+        this.elems = new Component(elems, this);
+        for (let i = 0; i < elems.length; ++i) {
+            const elem = elems[i];
+            elem.route = this;
+            if (elem instanceof PromiseComponent) {
+                const promise = _app.registeredPromises[elem.registeredIndex];
+                if (promise) {
+                    promise.route = this;
+                    promise.elementIndex = i;
+                }
+            }
+        }
         this.onMountFunc = onMountFunc;
         this.beforeRenderFunc = beforeRenderFunc;
         this.afterRenderFunc = afterRenderFunc;
@@ -235,6 +283,7 @@ class State {
 class HeReact {
     routes = [];
     registeredEvents = [];
+    registeredPromises = [];
     root;
     hash;
     constructor() {
@@ -259,7 +308,6 @@ class HeReact {
         routesArr.forEach((e) => {
             HeReact.addRoute(e);
         });
-        HeReact.render();
     }
     static addRoute(route) {
         if (isArray(route))
@@ -320,81 +368,136 @@ class HeReact {
         }
         return [];
     }
-    static prop(str)
-    {
-        if (typeof str === 'string') return str;
-        else return JSON.stringify(str);
+    static promiseDone(index, val) {
+        const promise = _app.registeredPromises[index];
+        if (promise && promise.index != -1) {
+            if (!promise.route && !promise.isInner)
+                return
+            const newElems = HeReact.createElements(val, promise.isInner === true);
+            if (promise.isInner) {
+                const elem = document.getElementById(`__PRIVATE_PROMISE_ELEMENT${promise.registeredIndex}__`);
+                if (!elem || !promise.parent)
+                    return;
+                let finalHtml = "";
+                for (let i = 0; i < newElems.length; ++i)
+                    finalHtml += newElems[i].outerHTML;
+                elem.outerHTML = finalHtml;
+                // We need to bind state to elements, since outerHTML created new elements (and we lost state because of that)
+                for (let node of promise.parent.children) {
+                    let text = node.innerText;
+                    node.innerText = HeReact.parseState(node, text);
+                }
+                if (!promise.route && promise.parent)
+                    promise.route = promise.parent.route;
+            }
+            else {
+                // Insert new elements, and update indexes of promises to the right
+                const compArr = promise.route.elems.componentsArr;
+                compArr.splice(promise.elementIndex++, 0, ...newElems);
+                for (let i = promise.elementIndex + newElems.length; i < compArr.length; ++i)
+                    if (compArr[i] instanceof PromiseComponent)
+                        compArr[i].elementIndex += newElems.length;
+            }
+            //Only rerender if promise was from current page
+            if (!promise.route || HeReact.getCurrentRouteStr() === promise.route.pathName)
+                HeReact.render();
+        }
     }
-    // bool -> (val : any)
+    // (val : any) -> bool
     static validateValue(val) {
         return val !== undefined && val !== null; // JS is retartet;
     }
-    static createElement(innerHTML) {
-        const arr = HeReact.createElements(innerHTML);
+    // (id : string) -> [bool, string]
+    static getElementTextById(id) {
+        const elem = document.getElementById(id);
+        if (this.validateValue(elem)) {
+            if (elem.tagName === "INPUT")
+                return [true, elem.value];
+            else
+                return [true, elem.innerText];
+        }
+        return [false, ""];
+    }
+    // (id : string) -> HTMLElement
+    static getElementById(id) {
+        return document.getElementById(id);
+    }
+    static createElement(innerHTML, ignoreState) {
+        const arr = HeReact.createElements(innerHTML, ignoreState);
         if (arr.length > 0) return arr[0];
         return [];
     }
-    static parseStateOfElements(resArr) {
-        for (let j = 0; j < resArr.length; ++j) {
-            const ress = resArr[j];
-            let childList = ress.children;
-            if (childList.length > 0)
-                this.parseStateOfElements(childList)
-            if (ress.localName === "br" || ress.localName === "img" || ress.localName === "input" || !ress.childNodes[0]) continue;
-            let text = ress.childNodes[0].nodeValue;
-            let regexp = /[$][#]{.*?}/g;
-            const abc = Array.from(text.matchAll(regexp));
-            let accumLength = 0;
-            for (let testt of abc) {
-                testt.forEach((e, idx) => {
-                    const start = testt.index + 3;
-                    const end = testt.index + testt[idx].length - 1;
-                    let command = testt.input.slice(start, end);
-                    const state = new State(
-                        ress,
-                        "innerText",
-                        start - 3 + accumLength
+    static parseState(currentElement, innerText) {
+        const regexp = /[$][#]{.*?}/g;
+        const statesArr = Array.from(innerText.matchAll(regexp));
+        let accumLength = 0;
+        for (let stateInText of statesArr) {
+            stateInText.forEach((e, idx) => {
+                const start = stateInText.index + 3;
+                const end = stateInText.index + stateInText[idx].length - 1;
+                let command = stateInText.input.slice(start, end);
+                const state = new State(
+                    currentElement,
+                    "innerText",
+                    start - 3 + accumLength
+                );
+                const constructorStr =
+                    state.constructor.name.toLocaleLowerCase();
+                command = command.replace("this", `${constructorStr}`);
+                const commandAddition = command.indexOf(constructorStr);
+                let commandStr = "";
+                if (
+                    commandAddition !== -1 &&
+                    commandAddition + constructorStr.length + 1 <
+                        command.length
+                ) {
+                    commandStr = command.slice(
+                        commandAddition + constructorStr.length + 1,
+                        command.length
                     );
-                    const constructorStr =
-                        state.constructor.name.toLocaleLowerCase();
-                    command = command.replace("this", `${constructorStr}`);
-                    const commandAddition = command.indexOf(constructorStr);
-                    let commandStr = "";
-                    if (
-                        commandAddition !== -1 &&
-                        commandAddition + constructorStr.length + 1 <
-                            command.length
-                    ) {
-                        commandStr = command.slice(
-                            commandAddition + constructorStr.length + 1,
-                            command.length
-                        );
-                        command = command.replace(
-                            `${constructorStr}`,
-                            `${constructorStr}, "` + commandStr + '"'
-                        );
-                    }
-                    let result;
-                    eval(`result = ${command};`);
-                    text =
-                        text.slice(0, start - 3 + accumLength) +
-                        "" +
-                        result +
-                        "" +
-                        text.slice(
-                            testt.index + accumLength + ("" + e).length,
-                            text.length
-                        );
-                    accumLength += ("" + result).length - e.length;
-                });
-            }
-            ress.childNodes[0].nodeValue = text;
+                    command = command.replace(
+                        `${constructorStr}`,
+                        `${constructorStr}, "` + commandStr + '"'
+                    );
+                }
+                let result;
+                eval(`result = ${command};`);
+                innerText =
+                    innerText.slice(0, start - 3 + accumLength) +
+                    "" +
+                    result +
+                    "" +
+                    innerText.slice(
+                        stateInText.index + accumLength + ("" + e).length,
+                        innerText.length
+                    );
+                accumLength += ("" + result).length - e.length;
+            });
+        }
+        return innerText;
+    }
+    static parseStateOfElements(resArr, ignoreState) {
+        for (let j = 0; j < resArr.length; ++j) {
+            const currentElem = resArr[j];
+            if (currentElem instanceof PromiseComponent)
+                continue;
+            const childList = currentElem.children;
+            if (childList.length > 0)
+                this.parseStateOfElements(childList, ignoreState)
+            if (!currentElem.childNodes[0])
+                continue;
+            if (currentElem.localName === "br" || currentElem.localName === "img" || currentElem.localName === "input")
+                continue;
+            if (ignoreState)
+                continue;
+            const text = currentElem.childNodes[0].nodeValue;
+            currentElem.childNodes[0].nodeValue = this.parseState(currentElem, text);
         }
         return resArr;
     }
-    static createElements(innerHTML) {
+    static createElements(innerHTML, ignoreState) {
         const resArr = HtmlParser.parseHtml(innerHTML);
-        return HeReact.parseStateOfElements(resArr);
+        return HeReact.parseStateOfElements(resArr, ignoreState);
     }
     static registerEvent(eventName) {
         let alreadyExist = false;
@@ -418,6 +521,11 @@ class HeReact {
         }
         return _app.registeredEvents[index];
     }
+}
+function prop(str)
+{
+    if (typeof str === 'string') return str;
+    else return JSON.stringify(str);
 }
 function useState(val, eventName) {
     let newVal = val;

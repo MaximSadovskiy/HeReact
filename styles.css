@@ -7,16 +7,17 @@ body {
 }
 button {
   border-radius: 10px;
-  border: 3px solid transparent;
-  padding: 0.1em 0.5em;
+  padding: 0.2em 0.6em;
+  border: 3px solid black;
   font-size: 2.2em;
   font-family: "Times New Roman", Times, serif;
   background-color: #1a1a1a;
-  border-color: #00D8FF;
   color: #fd4e4e;
   cursor: pointer;
   transition: border-color 0.35s;
-  margin: 0.5em;
+  margin: 0.4em;
+  box-sizing: border-box; /* includes border in size */
+  pointer-events: auto;
 }
 button:active {
   translate: 0px 0.2em;
@@ -83,7 +84,7 @@ h4 {
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms;
-  animation: logo-spin infinite 3s;
+  animation: logo-spin 3s linear infinite;
   margin-bottom: 5em;
   user-select: none;
   user-drag: none;

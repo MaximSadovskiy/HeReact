@@ -1,0 +1,18 @@
+[
+    {
+        "title": "OpenAI Homepage",
+        "url": "https://www.openai.com/"
+    },
+    {
+        "title": "MDN Web Docs",
+        "url": "https://developer.mozilla.org/"
+    },
+    {
+        "title": "Stack Overflow",
+        "url": "https://stackoverflow.com/"
+    },
+    {
+        "title": "Example Article",
+        "url": "https://example.com/article"
+    }
+]

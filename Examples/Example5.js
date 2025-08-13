@@ -15,7 +15,6 @@ function removeTODO(index, button)
         if (button) button.remove();
         todo.ptr.remove();
     } catch(e) {}
-    return true;
 }
 
 function addTODO(self)
@@ -45,8 +44,8 @@ function keyDown(self, e)
 
 const example5Elems
     = HeReact.createElements(`<h1>Welcome to TODO!</h1>
-                              <button onclick='{addTODO(this)}' style="font-size: 1em;">Create todo</button>
-                              <input onkeydown="keyDown(this, event)" id="inputText"/>
+                              <button onclick='{addTODO(this)}' style="font-size: 2em;">Create todo</button>
+                              <input onkeydown="keyDown(this, event)" style="width:20em; height:3em;" id="inputText"/>
                               <div id="todos"> </div>
                               ${backButton}
                             `);

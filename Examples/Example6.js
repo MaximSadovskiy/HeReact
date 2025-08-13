@@ -7,7 +7,7 @@ function infoElement(e) {
 }
 
 const example6Elems
-    = HeReact.createElements(`<h1>Pass info example!</h1>
+    = HeReact.createElements(`<h1>Pass info example! (Check console)</h1>
                               <div id="events" onclick='{infoEvent(event)}'>
                                 <h2>You can pass event to a function</h2>
                                 <br>
@@ -15,9 +15,9 @@ const example6Elems
                                 <button id='Button2'>Button2</button>
                                 <button id='Button3'>Button3</button>
                               </div>
-                                <h2>Or you can pass element itself</h2>
-                                <br>
-                                <button id='Epic_Button' onclick='{infoElement(this)}'>Epic but</button>
+                              <h2>Or you can pass element itself</h2>
+                              <br>
+                              <button id='Epic_Button' onclick='{infoElement(this)}'>Epic butt</button>
                               ${backButton}
                             `);
 

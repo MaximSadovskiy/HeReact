@@ -1,4 +1,4 @@
-const countOfExamples = 7;
+const countOfExamples = 9;
 
 function renderPage() {
   let page = `<h1>Welcome to HeReact!</h1>`

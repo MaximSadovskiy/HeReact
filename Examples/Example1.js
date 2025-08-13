@@ -8,7 +8,7 @@ function updateCounter() {
 const example1Elems
     = HeReact.createElements(`<h1>Welcome to HeReact!</h1>
                               <a class='box'>
-                                <img src='./logo.svg' class='logo' draggable="false" alt='Shit browser, gg'>
+                                <img src='./logo.svg' id='logo' class='logo' draggable="false" alt='Shit browser, gg'>
                               </a>
                               <div id="innerButt">
                                 <button onclick='{updateCounter()}'>You pressed $#{counter(this)}</button>
