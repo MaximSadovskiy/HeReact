@@ -15,7 +15,7 @@ button {
   color: #fd4e4e;
   cursor: pointer;
   transition: border-color 0.35s;
-  margin: 0.4em;
+  margin: 0.2em;
   box-sizing: border-box; /* includes border in size */
   pointer-events: auto;
 }
