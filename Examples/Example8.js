@@ -5,6 +5,7 @@ function calculate()
 {
     const [isFound, text] = HeReact.getElementTextById(INPUT_ID);
     if (isFound && text.length > 0) {
+        // Totally safe eval.
         Calculator.setResultText(eval(text));
     }
 }
@@ -20,7 +21,7 @@ class Calculator {
                 <div>
                     <h2 id="${RESULT_TEXT_ID}">Result: $#{Calculator.resultText(this)}</h2>
                 </div>
-                <input id="${INPUT_ID}" style="width:20em; height:3em;"/>
+                <input id="${INPUT_ID}" style="width:20em; height:3em; margin:1em;"/>
                 <button style="width:6.5em; height:1.5em;" onclick='{calculate()}'>Calculate</button>
                 ${backButton}`;
     }

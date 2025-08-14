@@ -15,7 +15,7 @@ button {
   color: #fd4e4e;
   cursor: pointer;
   transition: border-color 0.35s;
-  margin: 0.2em;
+  margin: 0.15em;
   box-sizing: border-box; /* includes border in size */
   pointer-events: auto;
 }
@@ -69,6 +69,14 @@ h4 {
 {
   margin-top: auto;
   bottom: 0;
+}
+
+.square
+{
+    margin: 0px;
+    border-radius: 0px;
+    width: 80px;
+    height: 70px;
 }
 
 @keyframes logo-spin {

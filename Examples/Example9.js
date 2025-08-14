@@ -16,9 +16,10 @@ async function fetch_stuff() {
     ]`;
 
     return new Promise(resolve => {
+        const randomTiming = Math.random() * 2000;
         setTimeout(() => {
           resolve(example_JSON);
-        }, 723);
+        }, randomTiming);
     });
 }
 

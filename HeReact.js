@@ -5,7 +5,7 @@ class HtmlParser {
                         'p', 'span', 'img', 'input', 'textarea', 'select',
                         'button', 'label', 'table', 'tr', 'td', 'th', 'ul',
                         'ol', 'li', 'dl', 'dt', 'dd', 'form', 'fieldset',
-                        'legend', 'script', 'style', 'link', 'meta',
+                        'legend', 'script', 'style', 'link', 'meta', 'hr',
                         'br', 'title', 'head', 'body', 'html'];
   
     static checkForCustomTag(tagName) {
@@ -268,14 +268,16 @@ class Route {
         });
     }
 }
-class State {
+class State_secret {
     target = null;
     property = "";
+    extra = ""; // for style
     lineStart = 0;
     lineEnd = 0;
-    constructor(target, property, start, end) {
+    constructor(target, property, extra, start, end) {
         this.target = target;
         this.property = property;
+        this.extra = extra;
         this.lineStart = start;
         this.lineEnd = end;
     }
@@ -427,7 +429,9 @@ class HeReact {
         if (arr.length > 0) return arr[0];
         return [];
     }
-    static parseState(currentElement, innerText) {
+    static parseState(currentElement, innerText, attrib, extra) {
+        if (!attrib)
+            attrib = "innerText"    
         const regexp = /[$][#]{.*?}/g;
         const statesArr = Array.from(innerText.matchAll(regexp));
         let accumLength = 0;
@@ -436,13 +440,14 @@ class HeReact {
                 const start = stateInText.index + 3;
                 const end = stateInText.index + stateInText[idx].length - 1;
                 let command = stateInText.input.slice(start, end);
-                const state = new State(
+                const state_secret = new State_secret(
                     currentElement,
-                    "innerText",
+                    attrib,
+                    extra,
                     start - 3 + accumLength
                 );
                 const constructorStr =
-                    state.constructor.name.toLocaleLowerCase();
+                    state_secret.constructor.name.toLocaleLowerCase();
                 command = command.replace("this", `${constructorStr}`);
                 const commandAddition = command.indexOf(constructorStr);
                 let commandStr = "";
@@ -492,6 +497,19 @@ class HeReact {
                 continue;
             const text = currentElem.childNodes[0].nodeValue;
             currentElem.childNodes[0].nodeValue = this.parseState(currentElem, text);
+            for (let attrib of currentElem.attributes) {
+                let attribValue = attrib.value.trim();
+
+                let extra = "";
+                if (attrib.name === "style") {
+                    for (let i = 0; i < attrib.value.length; ++i) {
+                        if (attrib.value[i] === ':')
+                            break;
+                        extra += attrib.value[i]
+                    }
+                }
+                attrib.value = this.parseState(currentElem, attribValue, attrib.name, extra)
+            }
         }
         return resArr;
     }
@@ -555,6 +573,7 @@ function useState(val, eventName) {
         return newVal;
     }
     function setVal(newValue, cmnd) {
+        let oldVal = null;
         if (customEv !== null)
             document.dispatchEvent(customEv);
         if (cmnd !== undefined && cmnd !== null && cmnd.length > 0) {
@@ -571,13 +590,19 @@ function useState(val, eventName) {
                     "useState setter called with a state element that is null"
                 );
             }
-            const start = e.target.innerText.slice(0, e.lineStart);
-            const end = e.target.innerText.slice(
+            const isAssigningStyle = (e.property === "style" && e.extra && e.extra.length > 0);
+            let innerText = e.target.innerText;
+            if (isAssigningStyle)
+                eval(`innerText = e.target.style.${e.extra}`);
+            const start = innerText.slice(0, e.lineStart);
+            const end = innerText.slice(
                 e.lineEnd,
-                e.target.innerText.length
+                innerText.length
             );
-
-            e.target.innerText = start + "" + newVal + "" + end;
+            if (isAssigningStyle)
+                eval(`e.target.style.${e.extra} = "${newVal + "" + end}"`);
+            else
+                e.target.innerText = start + "" + newVal + "" + end;
             let before = e.lineEnd;
             e.lineEnd = e.lineStart + ("" + newVal).length;
             let beforee = before - e.lineEnd;
@@ -601,6 +626,8 @@ function useState(val, eventName) {
                     f.lineEnd -= beforee;
                 });
             }
+            if (oldVal !== null)
+                newVal = oldVal
         });
     }
     return [state, setVal];
