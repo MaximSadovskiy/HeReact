@@ -11,7 +11,9 @@ const example1Elems
                                 <img src='./logo.svg' id='logo' class='logo' draggable="false" alt='Shit browser, gg'>
                               </a>
                               <div id="innerButt">
-                                <button onclick='{updateCounter()}'>You pressed $#{counter(this)}</button>
+                                <button onclick='{updateCounter()}'>
+                                    You pressed $#{counter(this)}
+                                </button>
                               </div>
                               ${backButton}
                             `);

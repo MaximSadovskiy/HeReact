@@ -26,7 +26,6 @@ class HtmlParser {
         const attr = element.attributes[i];
         obj.attributes.push({ name: attr.nodeName, value: attr.nodeValue });
       }
-  
       // Child nodes
       for (let i = 0; i < element.childNodes.length; i++) {
         const child = element.childNodes[i];
@@ -36,6 +35,7 @@ class HtmlParser {
           obj.innerText += child.nodeValue;
         }
       }
+      obj.innerText = obj.innerText.trim();
       return obj;
     }
   
@@ -430,6 +430,8 @@ class HeReact {
         return [];
     }
     static parseState(currentElement, innerText, attrib, extra) {
+        if (!innerText)
+            return
         if (!attrib)
             attrib = "innerText"    
         const regexp = /[$][#]{.*?}/g;
@@ -574,8 +576,6 @@ function useState(val, eventName) {
     }
     function setVal(newValue, cmnd) {
         let oldVal = null;
-        if (customEv !== null)
-            document.dispatchEvent(customEv);
         if (cmnd !== undefined && cmnd !== null && cmnd.length > 0) {
             command = cmnd;
         }
@@ -629,6 +629,8 @@ function useState(val, eventName) {
             if (oldVal !== null)
                 newVal = oldVal
         });
+        if (customEv !== null)
+            document.dispatchEvent(customEv);
     }
     return [state, setVal];
 }

@@ -24,5 +24,8 @@ function beforeRenderFn(self) {
     console.log("-------------------");
 }
 
-const example3Page = new Route('#example3', HeReact.createElements(`<h1>You can add text by changing URL:</h1>`), null, beforeRenderFn, () => { console.log("Hello after render"); });
+const example3Page = new Route('#example3',
+                                HeReact.createElements(`<h1>You can add text by changing URL:</h1>`),
+                                null,
+                                beforeRenderFn, () => { console.log("Hello after render"); });
 HeReact.addRoute(example3Page);

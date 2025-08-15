@@ -1,4 +1,5 @@
 class Game {
+    static defaultSize = 3;
     static checkForWin(map, n) {
         const winningLines = [];
     
@@ -49,7 +50,7 @@ class Game {
 
     static checkForDraw(map) {
         for (let i = 0; i < map.length; ++i) {
-            if (map[i] === undefined)
+            if (map[i] === null)
                 return false;
         }
         return true;
@@ -60,7 +61,7 @@ class Game {
         if (state.isOver)
             return;
         const key = button.attributes.key.value;
-        if (state.map[key] !== undefined)
+        if (state.map[key] !== null)
             return;
         state.map[key] = state.turn;
         
@@ -72,7 +73,7 @@ class Game {
         state.turn = !state.turn;
         Game.updateState(state);
         
-        const winner = this.checkForWin(state.map, Game.sizeOfBoard);
+        const winner = this.checkForWin(state.map, Game.size());
         const isDraw = this.checkForDraw(state.map);
         if (winner !== null || isDraw) {
             state.isOver = true;
@@ -88,15 +89,17 @@ class Game {
     }
 
     static resetGame() {
-        Game.updateState({ map: [], turn: true, isOver: false });
+        const size = Game.size();
+        const map = new Array(size * size).fill(null);
+        Game.updateState({ map: map, turn: true, isOver: false });
         const buttons = document.getElementsByClassName("square");
         for (let but of buttons)
             but.style.color = "transparent";
         Info.setHidden(true);
     }
     
-    drawRow(key, sizeOfBoard) {
-        let rowText = `<div class='board-row'> \n`;
+    static drawRow(key, sizeOfBoard) {
+        let rowText = `<div class='board-row'>`;
         for (let i = 0; i < sizeOfBoard; ++i)
             rowText += `<button class="square" key="${key++}" style="color: transparent" onclick="Game.makeTurn(this)">O</button>\n`;
         rowText += `</div>`;
@@ -104,38 +107,55 @@ class Game {
         return rowText;
     }
 
-    drawBoard() {
-        const sizeOfBoard = Game.sizeOfBoard;
-        let board = "<div class='board-game'> \n";
+    static drawBoard() {
+        Game.resetGame();
+        const board = HeReact.getElementById("board-game");
+        if (!board) return;
+        board.innerHTML = ""; // remove all childs
+        const sizeOfBoard = Game.size();
+        let rows = "";
         for (let i = 0; i < sizeOfBoard; ++i) {
-            board += this.drawRow(i * sizeOfBoard, sizeOfBoard);
+            rows += Game.drawRow(i * sizeOfBoard, sizeOfBoard);
         }
-        board += "</div>";
-        return board;
+        rows = HeReact.createElements(rows);
+        for (let i = 0; i < rows.length; ++i)
+            board.appendChild(rows[i]);
+    }
+
+    static handleRedraw(e, input) {
+        if (e.key == 'Enter') {
+            if (Info.isNumber(input.value))
+            {
+                if (input.value < 1)
+                {
+                    alert("You are not smart.")
+                    input.value = 1;
+                }
+                if (input.value > 50)
+                {
+                    alert("Woah, woah. Too much. I can only give you 50.")
+                    input.value = 50;
+                }
+                Game.setSize(input.value)
+            }
+            else
+                alert("Provide correct number.")
+        }
     }
 
     render() {
         [Game.state, Game.updateState] = useState({});
         [Game.winnerText, Game.setWinnerText] = useState("");
+        [Game.size, Game.setSize] = useState(3, "Game.drawBoard");
         Game.resetGame();
-
-        const actions = HeReact.getCurrentActionsStr();
-        if (actions.length > 0) {
-            actions.split('&').forEach(act => {
-                const action = act.split('=');
-                const actionName = action[0];
-                const actionText = action[1];
-                if (actionName === "boardSize")
-                    Game.sizeOfBoard = actionText;
-                if (!Game.sizeOfBoard || Game.sizeOfBoard < 3)
-                    Game.sizeOfBoard = 3;
-            });
-        }
         
-        return `${this.drawBoard()}`;
+        return `<div id='board-game' style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"> </div>`;
     }
 }
 class Info {
+    static isNumber(str) {
+        return !isNaN(str) && !isNaN(parseFloat(str));
+    }
     static setHidden(bool) {
         if (!Info.setHiddenState) return;
 
@@ -147,20 +167,26 @@ class Info {
     
     render() {
         [Info.hiddenState, Info.setHiddenState] = useState("hidden")
-        return `<button id="reset_button" style="visibility: $#{Info.hiddenState(this)}" onclick='Game.resetGame()'>
-                    Reset game
-                </button>
-                <h2 style="visibility: $#{Info.hiddenState(this)}">
+        return `<h2 style="visibility: $#{Info.hiddenState(this)}; margin: 0.7em;">
                     $#{Game.winnerText(this)}
-                </h2>`;
+                </h2>
+                <button id="reset_button" style="visibility: $#{Info.hiddenState(this)}" onclick='Game.resetGame()'>
+                    Reset game
+                </button>`;
     }
 }
 
 HeReact.addRoute(
     new Route(
         "#example10", HeReact.createElements(`<h1>Tic Tac Toe example!</h1>
-                                              <Game>${prop(3)}</Game>
+                                              <h2>(You can change size of board)</h2>
+                                              <input 
+                                                 value="${Game.defaultSize}"
+                                                 onkeydown="Game.handleRedraw(event, this)"
+                                                 style="margin-bottom: 2em;"/>
+                                              <Game></Game>
                                               <Info></Info>
-                                              ${backButton}`)
+                                              ${backButton}`),
+        null, null, Game.drawBoard
     )
 );

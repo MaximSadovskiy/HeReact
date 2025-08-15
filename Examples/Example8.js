@@ -1,12 +1,26 @@
 const INPUT_ID = "input";
 const RESULT_TEXT_ID = "result";
 
-function calculate()
+function sanitizeMathInput(input) {
+  // Allow only digits, operators + - * /, decimal point, parentheses and whitespace
+  const allowedRegex = /^[0-9+\-*/().\s]+$/;
+  
+  if (allowedRegex.test(input)) {
+    return input;
+  } else {
+    alert("You are not cool.\nOnly allowed digits, operators (+ - * /), decimal point and parentheses");
+    return "";
+  }
+}
+
+function calculate(e)
 {
+    if (e && e.key !== "Enter")
+        return;
     const [isFound, text] = HeReact.getElementTextById(INPUT_ID);
     if (isFound && text.length > 0) {
         // Totally safe eval.
-        Calculator.setResultText(eval(text));
+        Calculator.setResultText(eval(sanitizeMathInput(text)));
     }
 }
 
@@ -21,8 +35,7 @@ class Calculator {
                 <div>
                     <h2 id="${RESULT_TEXT_ID}">Result: $#{Calculator.resultText(this)}</h2>
                 </div>
-                <input id="${INPUT_ID}" style="width:20em; height:3em; margin:1em;"/>
-                <button style="width:6.5em; height:1.5em;" onclick='{calculate()}'>Calculate</button>
+                <input id="${INPUT_ID}" style="width:20em; height:3em; margin:1em;" onkeydown='{calculate(event)}'/>
                 ${backButton}`;
     }
 }

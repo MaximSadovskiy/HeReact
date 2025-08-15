@@ -42,9 +42,18 @@ function keyDown(self, e)
 
 const example5Elems
     = HeReact.createElements(`<h1>Welcome to TODO!</h1>
-                              <button onclick='{addTODO(this)}' style="font-size: 2em;">Create todo</button>
-                              <input onkeydown="keyDown(this, event)" style="width:20em; height:3em; margin:1em;" id="inputText"/>
-                              <div id="todos"> </div>
+                              <button
+                                onclick='{addTODO(this)}'
+                                style="font-size: 2em;"
+                              >
+                                Create todo
+                              </button>
+                              <input onkeydown="keyDown(this, event)"
+                                style="width:20em;
+                                height:3em; margin:1em;"
+                                id="inputText"/>
+
+                                <div id="todos"/>
                               ${backButton}
                             `);
 

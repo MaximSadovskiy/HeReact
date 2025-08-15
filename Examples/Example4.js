@@ -19,7 +19,7 @@ class Testcomponent {
     }
 }
 
-const example4Page = new Route('#example4',
-                                HeReact.createElements(`<Testcomponent>${prop("{str:'hello!'}")}</<Testcomponent>`)
-                            );
+const example4Page = new Route('#example4', HeReact.createElements(`<Testcomponent>
+                                                                        ${prop("{str:'hello!'}")}
+                                                                    </<Testcomponent>`));
 HeReact.addRoute(example4Page);
